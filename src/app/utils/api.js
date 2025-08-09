@@ -3,7 +3,7 @@ import axios from "axios";
 import { getToken } from "./auth";
 
 const api = axios.create({
-  baseURL: process.env.API || "http://localhost:5000/api",
+  baseURL: process.env.NEXT_PUBLIC_API,
   withCredentials: true, // optional if backend uses cookies
 });
 

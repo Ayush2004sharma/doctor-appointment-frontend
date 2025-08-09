@@ -1,30 +1,48 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { useAuthContext } from "../context/AuthContext";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
-  const { user, logout, role, loading } = useAuthContext();
+  const { user, logout, loading } = useAuthContext();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const pathname = usePathname();
 
+  const appointmentCount = user?.appointmentCount || 0;
+
+  // Toggle handlers
   const toggleDropdown = () => setDropdownOpen((prev) => !prev);
   const toggleMobileMenu = () => setMobileMenuOpen((prev) => !prev);
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  const appointmentCount = user?.appointmentCount || 0;
-
+  // Close dropdown when clicking outside
   useEffect(() => {
-    console.log("🔁 Auth state updated:", user);
-  }, [user]);
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (loading) return null;
+
+  // Function to get active link style
+  const getLinkClass = (href) =>
+    `hover:text-blue-600 transition ${
+      pathname === href ? "border-b-2 border-blue-600 text-blue-600" : ""
+    }`;
 
   return (
     <header className="bg-white shadow-md px-4 py-3 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo */}
         <div className="flex items-center space-x-2">
           <Link
             href="/"
@@ -34,27 +52,26 @@ export default function Navbar() {
           </Link>
         </div>
 
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex flex-1 justify-center space-x-8 text-gray-900 font-semibold text-base select-none">
-          <Link href="/" className="hover:text-blue-600 transition">
+          <Link href="/" className={getLinkClass("/")}>
             Home
           </Link>
-          <Link
-            href="/pages/doctors"
-            className="hover:text-blue-600 transition"
-          >
+          <Link href="/pages/doctors" className={getLinkClass("/pages/doctors")}>
             All Doctors
           </Link>
-          <Link href="/#about" className="hover:text-blue-600 transition">
+          <Link href="/#about" className={getLinkClass("/#about")}>
             About
           </Link>
-          <Link href="/#contact" className="hover:text-blue-600 transition">
+          <Link href="/#contact" className={getLinkClass("/#contact")}>
             Contact
           </Link>
         </nav>
 
+        {/* Right side */}
         <div className="flex items-center space-x-3">
           {user ? (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <img
                 src={user.avatar || "/default-avatar.png"}
                 alt="Avatar"
@@ -106,6 +123,7 @@ export default function Navbar() {
             </>
           )}
 
+          {/* Mobile Menu Button */}
           <button
             className="inline-flex md:hidden items-center justify-center p-2 rounded-lg hover:bg-blue-100 transition"
             onClick={toggleMobileMenu}
@@ -116,34 +134,35 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-blue-100 shadow">
           <nav className="flex flex-col space-y-1 p-4 font-semibold text-gray-800">
             <Link
               href="/"
               onClick={closeMobileMenu}
-              className="py-2 hover:text-blue-600"
+              className={getLinkClass("/")}
             >
               Home
             </Link>
             <Link
               href="/pages/doctors"
               onClick={closeMobileMenu}
-              className="py-2 hover:text-blue-600"
+              className={getLinkClass("/pages/doctors")}
             >
               All Doctors
             </Link>
             <Link
               href="/#about"
               onClick={closeMobileMenu}
-              className="py-2 hover:text-blue-600"
+              className={getLinkClass("/#about")}
             >
               About
             </Link>
             <Link
               href="/#contact"
               onClick={closeMobileMenu}
-              className="py-2 hover:text-blue-600"
+              className={getLinkClass("/#contact")}
             >
               Contact
             </Link>
