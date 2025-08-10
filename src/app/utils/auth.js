@@ -19,7 +19,6 @@ export function getToken() {
   }
   return null;
 }
-
 // Optionally: Parse payload for user/doctor id/role
 export function getUserFromToken() {
   const token = getToken();
