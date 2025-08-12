@@ -66,14 +66,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50 py-10 px-0">
       <Banner />
       <div className="w-full space-y-8">
-        {/* Add margin above the search bar */}
-        <div className="mt-6">
-          <DoctorSearchBar
-            query={query}
-            setQuery={setQuery}
-            onSearch={handleSearch}
-          />
-        </div>
+     
         {/* Flex row for map and list */}
         <div className="w-full px-4 py-6">
           {/* 💙 Heading */}

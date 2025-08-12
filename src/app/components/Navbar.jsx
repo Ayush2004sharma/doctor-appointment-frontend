@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Menu } from "lucide-react";
 import { useAuthContext } from "../context/AuthContext";
 import { usePathname } from "next/navigation";
+import doc1 from '@/app/assets/assets_frontend/doc1.png'
+import Image from "next/image";
 
 export default function Navbar() {
   const { user, logout, loading } = useAuthContext();
@@ -72,12 +74,15 @@ export default function Navbar() {
         <div className="flex items-center space-x-3">
           {user ? (
             <div className="relative" ref={dropdownRef}>
-              <img
-                src={user.avatar || "/default-avatar.png"}
-                alt="Avatar"
-                onClick={toggleDropdown}
-                className="w-10 h-10 rounded-full cursor-pointer border border-blue-200 object-cover"
-              />
+             
+<Image
+  src={user.avatar || doc1}
+  alt="Avatar"
+  width={40}
+  height={40}
+  onClick={toggleDropdown}
+  className="w-10 h-10 rounded-full cursor-pointer border border-blue-200 object-cover"
+/>
               {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-52 bg-white border border-blue-200 rounded-xl shadow-xl z-50 overflow-hidden">
                   <Link

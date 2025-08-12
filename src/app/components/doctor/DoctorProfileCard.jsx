@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { MapPin, Phone, Edit, Save } from 'lucide-react';
 import { useAuthContext } from '@/app/context/AuthContext';
 import api from '@/app/utils/api';
-
+import doc1 from '@/app/assets/assets_frontend/doc1.png'
+import Image from 'next/image';
 export default function DoctorProfileCard() {
   const { user, role, loading: authLoading } = useAuthContext();
   const [doctor, setDoctor] = useState(null);
@@ -13,7 +14,7 @@ export default function DoctorProfileCard() {
   const [loading, setLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
 
-  console.log(user.doctorId, 'user in doctor profile card');
+
   const token = localStorage.getItem('token');
   console.log(token, 'user in doctor profile card');
   // Fetch doctor profile by ID
@@ -116,11 +117,13 @@ export default function DoctorProfileCard() {
     <div className="rounded-2xl p-6 w-full max-w-xl bg-white border border-blue-100 shadow-lg space-y-4">
       {/* Profile Header */}
       <div className="flex items-center gap-4">
-        <img
-          src={profilePic || '/doctor-placeholder.png'}
-          alt={name}
-          className="w-20 h-20 rounded-full object-cover border-2 border-blue-400 shadow-sm"
-        />
+        <Image
+  src={profilePic || doc1}
+  alt={name}
+  width={80}
+  height={80}
+  className="rounded-full object-cover border-2 border-blue-400 shadow-sm"
+/>
         <div>
           {editMode ? (
             <input
