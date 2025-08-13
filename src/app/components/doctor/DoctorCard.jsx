@@ -4,6 +4,19 @@ import React from 'react';
 import { MapPin, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import doc1 from '@/app/assets/assets_frontend/doc1.png';
+import doc2 from '@/app/assets/assets_frontend/doc2.png';
+import doc3 from '@/app/assets/assets_frontend/doc3.png';
+import doc4 from '@/app/assets/assets_frontend/doc4.png';
+import doc5 from '@/app/assets/assets_frontend/doc5.png';
+import doc6 from '@/app/assets/assets_frontend/doc6.png';
+import doc7 from '@/app/assets/assets_frontend/doc7.png';
+import doc8 from '@/app/assets/assets_frontend/doc8.png';
+import doc9 from '@/app/assets/assets_frontend/doc9.png';
+import doc10 from '@/app/assets/assets_frontend/doc10.png';
+
+const fallbackImages = [doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8, doc9, doc10];
 
 export default function DoctorCard({ doctor }) {
   const router = useRouter();
@@ -24,6 +37,12 @@ export default function DoctorCard({ doctor }) {
     profilePic,
   } = doctor;
 
+  // Pick a fallback image based on doctor _id
+  const getFallbackImage = () => {
+    const index = _id ? parseInt(_id.slice(-2), 16) % fallbackImages.length : 0;
+    return fallbackImages[index];
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -32,10 +51,12 @@ export default function DoctorCard({ doctor }) {
     >
       {/* Header Section */}
       <div className="flex items-center gap-4">
-        <img
-          src={profilePic || '/doctor-placeholder.png'}
+        <Image
+          src={profilePic || getFallbackImage()}
           alt={name}
-          className="w-16 h-16 rounded-full object-cover border-2 border-blue-400 shadow-md"
+          width={80}
+          height={80}
+          className="rounded-full object-cover border-2 border-blue-400 shadow-sm"
         />
         <div>
           <h2 className="text-xl font-bold text-blue-800">{name}</h2>
@@ -64,8 +85,7 @@ export default function DoctorCard({ doctor }) {
           <strong>Fee:</strong> ₹{fee}
         </p>
         <p>
-          <strong>Qualifications:</strong>{' '}
-          {qualifications.length ? qualifications.join(', ') : 'N/A'}
+          <strong>Qualifications:</strong> {qualifications.length ? qualifications.join(', ') : 'N/A'}
         </p>
         <p className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-blue-500" />

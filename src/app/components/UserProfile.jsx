@@ -5,21 +5,24 @@ import api from "../utils/api";
 import ProfileCard from "./ProfileCard";
 import AppointmentCard from "./AppointmentCard";
 import { useAuthContext } from "../context/AuthContext";
+import MyAppointments from "../pages/appointments/page";
 
 export default function UserProfilePage() {
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState({});
-  const { role } = useAuthContext();
+  const { role ,user} = useAuthContext();
 
+  const userId = user.userId;
+  console.log("User ID:", userId);
   useEffect(() => {
     if (!role) return;
 
     const token = localStorage.getItem("token");
 
     const profileUrl = role === "doctor" ? "/doctors/profile" : "/users/profile";
-    const appointmentsUrl = role === "doctor" ? "/appointments/doctor" : "/appointments/user";
+    const appointmentsUrl = role === "doctor" ? "/appointments/doctor" : `/appointments/user/${userId}`;
 
     // Fetch Profile
     api.get(profileUrl, { headers: { Authorization: `Bearer ${token}` } })
@@ -50,15 +53,7 @@ export default function UserProfilePage() {
         {/* Appointments Section */}
         <div className="col-span-1 lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
           <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">My Appointments</h2>
-          {appointments.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No appointments found.</p>
-          ) : (
-            <div className="space-y-4">
-              {appointments.map((a) => (
-                <AppointmentCard key={a._id} appointment={a} />
-              ))}
-            </div>
-          )}
+          <MyAppointments/>
         </div>
       </div>
     </div>
