@@ -2,35 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/app/utils/api';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuthContext } from '@/app/context/AuthContext';
-import { useRouter } from 'next/navigation';
 
 export default function BookAppointments() {
   const params = useParams();
   const doctorId = params.id;
-  console.log("Doctor ID:", doctorId);
-  const {user}= useAuthContext();
-  const loggedInUser=user.userId||null;
-  console.log("Logged in user:", loggedInUser);
+  const { user } = useAuthContext();
+  const loggedInUser = user?.userId || null; // ✅ safe optional chaining
+  const router = useRouter();
+
   const [doctor, setDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const router = useRouter();
-
-const [notes, setNotes] = useState(""); // state for notes
+  const [notes, setNotes] = useState("");
   const [loadingDoctor, setLoadingDoctor] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [doctorError, setDoctorError] = useState(null);
   const [slotsError, setSlotsError] = useState(null);
   const [bookingStatus, setBookingStatus] = useState(null);
 
-  // Map JS day index to API key
   const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (user === null) return; // still loading
+    if (!loggedInUser) {
+      router.push('/login');
+    }
+  }, [user, loggedInUser, router]);
 
   // Fetch doctor info
   useEffect(() => {
+    if (!doctorId) return;
     const fetchDoctor = async () => {
       setLoadingDoctor(true);
       setDoctorError(null);
@@ -45,89 +50,72 @@ const [notes, setNotes] = useState(""); // state for notes
         setLoadingDoctor(false);
       }
     };
-    if (doctorId) fetchDoctor();
+    fetchDoctor();
   }, [doctorId]);
 
-  // Fetch available slots for selected date
-useEffect(() => {
-  const fetchSlots = async () => {
-    setLoadingSlots(true);
-    setSlotsError(null);
-    setAvailableSlots([]);
-    console.log('Fetching slots for:', doctorId);
+  // Fetch available slots
+  useEffect(() => {
+    if (!doctorId || !selectedDate) return;
+    const fetchSlots = async () => {
+      setLoadingSlots(true);
+      setSlotsError(null);
+      setAvailableSlots([]);
+      try {
+        const token = localStorage.getItem('token');
+        const { data } = await api.get('/doctors/availability', {
+          params: { doctorId },
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const dayKey = dayMap[new Date(selectedDate).getDay()];
+        const daySchedule = data.schedule.schedule[dayKey];
+
+        if (!daySchedule?.active || daySchedule.slots.length === 0) {
+          setAvailableSlots([]);
+        } else {
+          setAvailableSlots(daySchedule.slots.map(
+            (s) => `${s.startTime} - ${s.endTime}`
+          ));
+        }
+      } catch (err) {
+        console.error(err);
+        setSlotsError('Error fetching available slots.');
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+    fetchSlots();
+  }, [doctorId, selectedDate]);
+
+  // Book appointment
+  const handleBooking = async () => {
+    if (!selectedSlot) return alert('Please select a slot');
+    if (!loggedInUser) return alert("You must be logged in to book an appointment");
+
+    const startTime = selectedSlot.split(' - ')[0];
+    const scheduledFor = new Date(`${selectedDate}T${startTime}:00`).toISOString();
+
+    if (isNaN(new Date(scheduledFor).getTime())) {
+      return alert("Invalid date or time selected");
+    }
+
+    const payload = { userId: loggedInUser, scheduledFor, notes };
 
     try {
-      const token = localStorage.getItem('token'); // or wherever you store it
-   const { data } = await api.get('/doctors/availability', {
-  params: { doctorId },
-  headers: { Authorization: `Bearer ${token}` }
-});
+      const token = localStorage.getItem("token");
+      await api.post(`/appointments/${doctorId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-
-      const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-      const dayKey = dayMap[new Date(selectedDate).getDay()];
-
-      const daySchedule = data.schedule.schedule[dayKey];
-
-      if (!daySchedule || !daySchedule.active || daySchedule.slots.length === 0) {
-        setAvailableSlots([]);
-      } else {
-        const slots = daySchedule.slots.map(
-          (s) => `${s.startTime} - ${s.endTime}`
-        );
-        setAvailableSlots(slots);
-      }
+      setBookingStatus('Appointment booked successfully!');
+      setTimeout(() => router.push('/'), 1000);
     } catch (err) {
-      console.error(err);
-      setSlotsError('Error fetching available slots.');
-    } finally {
-      setLoadingSlots(false);
+      console.error(err.response?.data || err);
+      setBookingStatus('Failed to book appointment.');
     }
   };
 
-  if (doctorId && selectedDate) fetchSlots();
-}, [doctorId, selectedDate]);
-
-
-  // Book appointment
-const handleBooking = async () => {
-  if (!selectedSlot) return alert('Please select a slot');
-  if (!loggedInUser) return alert("You must be logged in to book an appointment");
-
-  const startTime = selectedSlot.split(' - ')[0];
-  const scheduledFor = new Date(`${selectedDate}T${startTime}:00`).toISOString();
-
-  if (isNaN(new Date(scheduledFor).getTime())) {
-    return alert("Invalid date or time selected");
-  }
-
-  const payload = {
-    userId: loggedInUser,
-    scheduledFor,
-    notes
-  };
-
-  try {
-    const token = localStorage.getItem("token");
-    await api.post(`/appointments/${doctorId}`, payload, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    setBookingStatus('Appointment booked successfully!');
-
-    // Redirect after 1 second
-    setTimeout(() => {
-      router.push('/'); // go to home page
-    }, 1000);
-
-  } catch (err) {
-    console.error(err.response?.data || err);
-    setBookingStatus('Failed to book appointment.');
-  }
-};
-
-
-
+  if (!user) return <div>Loading user info...</div>; // ✅ wait until user is loaded
   if (loadingDoctor) return <div>Loading doctor info...</div>;
   if (doctorError) return <div className="text-red-500">{doctorError}</div>;
 
@@ -152,16 +140,19 @@ const handleBooking = async () => {
             className="border rounded px-2 py-1 w-full"
           />
         </div>
-<div className="mb-4">
-  <label className="text-blue-600 font-medium mb-1 block">Notes (optional):</label>
-  <textarea
-    value={notes}
-    onChange={(e) => setNotes(e.target.value)}
-    placeholder="Enter any notes for your appointment..."
-    className="border rounded px-2 py-1 w-full"
-    rows={3}
-  />
-</div>
+
+        {/* Notes */}
+        <div className="mb-4">
+          <label className="text-blue-600 font-medium mb-1 block">Notes (optional):</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Enter any notes for your appointment..."
+            className="border rounded px-2 py-1 w-full"
+            rows={3}
+          />
+        </div>
+
         {/* Available Slots */}
         <div className="mb-4">
           <p className="text-blue-600 font-medium mb-2">Available Slots:</p>
